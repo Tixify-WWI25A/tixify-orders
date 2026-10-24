@@ -18,7 +18,7 @@ async function main() {
   const { createApp } = require('./app');
   const pool = require('./config/db');
   const { cancelStalePending } = require('./repositories/orderRepository');
-  const { closeEventBus } = require('./services/eventBus');
+  const { closeEventBus } = require('./services/notificationService');
 
   const app = createApp();
   const port = Number(process.env.PORT) || 3002;

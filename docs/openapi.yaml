@@ -1,0 +1,305 @@
+# Mit KI erstellt (KI-Log Nr. 7), vom Team geprüft.
+openapi: 3.0.3
+info:
+  title: Tixify orders-Service
+  version: 1.0.0
+  description: |
+    Warenkorb, Checkout mit PayPal, Bestellungen und Tickets (Use-Case 1, Schritte 4 bis 8).
+
+    Ablauf eines Kaufs:
+    1. `POST /api/orders` – reserviert die Tickets beim catalog-Service (409, wenn nicht genug da sind)
+       und legt eine PayPal-Order über den Betrag aus dem catalog an.
+    2. Der Kunde bestätigt die Zahlung im PayPal-Fenster.
+    3. `POST /api/orders/{id}/capture` – zieht die Zahlung ein, prüft den Betrag, bestätigt die Reservierung,
+       erzeugt die Tickets und stößt asynchron die Bestätigungsmail an (Queue, siehe `events.md`).
+       Geht nach dem Abbuchen etwas schief, wird automatisch zurückerstattet.
+    4. Bei Abbruch: `POST /api/orders/{id}/cancel`. Unbezahlte Reservierungen verfallen nach 15 Minuten.
+
+    Alle Endpunkte verlangen einen Login. Fehler haben das Format `{ "error": "...", "details": { ... } }`.
+    Mit „veraltet“ markierte Pfade halten das bisherige Frontend lauffähig.
+
+servers:
+  - url: https://tixify-orders.herokuapp.com
+    description: Produktion (Heroku-App tixify-orders; genaue URL siehe Heroku-Dashboard)
+  - url: http://localhost:3002
+    description: lokal
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Warenkorb
+  - name: Bestellungen
+
+paths:
+  /api/cart:
+    get:
+      tags: [Warenkorb]
+      summary: Warenkorb mit aktuellen Event-Daten aus dem catalog
+      responses:
+        '200':
+          description: Warenkorb
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cart' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+
+  /api/cart/items/{eventId}:
+    parameters:
+      - { name: eventId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    put:
+      tags: [Warenkorb]
+      summary: Menge eines Events setzen (0 = entfernen)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quantity]
+              properties:
+                quantity: { type: integer, minimum: 0, maximum: 100 }
+      responses:
+        '200':
+          description: Gesetzt
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  eventId: { type: integer }
+                  quantity: { type: integer }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: 'Mehr als verfügbar (Hinweis; verbindlich ist erst die Reservierung im Checkout)'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    delete:
+      tags: [Warenkorb]
+      summary: Position entfernen
+      responses:
+        '204': { description: 'Entfernt' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/cart/items:
+    post:
+      tags: [Warenkorb]
+      summary: 'veraltet: Menge setzen (quantity) oder ändern (delta)'
+      deprecated: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [eventId]
+              properties:
+                eventId: { type: integer }
+                quantity: { type: integer, minimum: 1, maximum: 100 }
+                delta: { type: integer, example: -1 }
+      responses:
+        '200': { description: 'Gesetzt' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/orders:
+    get:
+      tags: [Bestellungen]
+      summary: Eigene Buchungen mit Tickets (ohne offene Bestellungen)
+      responses:
+        '200':
+          description: Buchungen, neueste zuerst
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Booking' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Bestellungen]
+      summary: Bestellung aus dem Warenkorb anlegen, Tickets reservieren, PayPal vorbereiten
+      responses:
+        '201':
+          description: Reserviert, PayPal-Order angelegt
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CreatedOrder' }
+        '400': { description: 'Warenkorb leer' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409':
+          description: 'Nicht genug Tickets – details nennt Event, gewünschte und verfügbare Menge'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+
+  /api/orders/{id}/capture:
+    parameters: [{ $ref: '#/components/parameters/OrderId' }]
+    post:
+      tags: [Bestellungen]
+      summary: Zahlung einziehen und Kauf abschließen (mehrfach aufrufbar)
+      responses:
+        '200':
+          description: Kauf abgeschlossen (auch bei erneutem Aufruf)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  orderId: { type: integer }
+                  tickets: { type: integer }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { description: 'Zahlung von PayPal abgelehnt; nichts abgebucht' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Bestellung nicht mehr offen, Betrag falsch oder Reservierung abgelaufen (Betrag wird zurückerstattet)' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+
+  /api/orders/{id}/cancel:
+    parameters: [{ $ref: '#/components/parameters/OrderId' }]
+    post:
+      tags: [Bestellungen]
+      summary: Offene Bestellung abbrechen, Reservierung freigeben
+      responses:
+        '200':
+          description: Abgebrochen
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orderId: { type: integer }
+                  status: { type: string, enum: [CANCELLED] }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Bestellung ist bereits bezahlt oder fehlgeschlagen' }
+
+  /api/orders/my-bookings:
+    get:
+      tags: [Bestellungen]
+      summary: 'veraltet: wie GET /api/orders'
+      deprecated: true
+      responses:
+        '200': { description: 'Buchungen' }
+
+  /api/orders/create-paypal-order:
+    post:
+      tags: [Bestellungen]
+      summary: 'veraltet: wie POST /api/orders'
+      deprecated: true
+      responses:
+        '201': { description: 'Reserviert, PayPal-Order angelegt' }
+
+  /api/orders/capture-paypal-order:
+    post:
+      tags: [Bestellungen]
+      summary: 'veraltet: wie POST /api/orders/{id}/capture, aber über die PayPal-Order-ID'
+      deprecated: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [paypalOrderId]
+              properties:
+                paypalOrderId: { type: string }
+      responses:
+        '200': { description: 'Kauf abgeschlossen' }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+
+  parameters:
+    OrderId:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+
+  responses:
+    BadRequest:
+      description: Ungültige Eingabe
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: Nicht angemeldet oder Token ungültig/abgelaufen
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: 'Nicht gefunden (auch: Bestellung eines anderen Nutzers)'
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unavailable:
+      description: catalog oder PayPal nicht erreichbar
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string, example: 'Nicht genug Tickets für „Lumen Live“.' }
+        details: { type: object, additionalProperties: true, example: { eventId: 1, requested: 2, available: 1 } }
+
+    Cart:
+      type: object
+      properties:
+        totalAmount: { type: number, example: 99.98 }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              event_id: { type: integer }
+              quantity: { type: integer }
+              title: { type: string }
+              price: { type: number }
+              event_stock: { type: integer }
+              location: { type: string }
+              event_date: { type: string, format: date-time }
+              category: { type: string }
+              logo_url: { type: string, nullable: true }
+
+    CreatedOrder:
+      type: object
+      properties:
+        orderId: { type: integer }
+        paypalOrderId: { type: string, description: 'An das PayPal-JavaScript-SDK zurückgeben (createOrder)' }
+        totalAmount: { type: number }
+        expiresAt: { type: string, format: date-time, description: 'Bis dahin sind die Tickets reserviert' }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              eventId: { type: integer }
+              quantity: { type: integer }
+              title: { type: string }
+              unitPrice: { type: number }
+
+    Booking:
+      type: object
+      properties:
+        order_id: { type: integer }
+        status: { type: string, enum: [COMPLETED, CANCELLED, FAILED] }
+        total_amount: { type: number }
+        created_at: { type: string, format: date-time }
+        tickets:
+          type: array
+          items:
+            type: object
+            properties:
+              ticket_id: { type: integer }
+              ticket_code: { type: string, example: TIX-57D5AE77E4FF }
+              event_id: { type: integer }
+              title: { type: string }
+              price: { type: number }

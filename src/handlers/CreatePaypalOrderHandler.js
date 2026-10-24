@@ -1,14 +1,17 @@
 // Basiert auf unserem handlers/CreatePaypalOrderHandler.js (PayPal-Order aus dem Warenkorb anlegen).
 // Mit KI überarbeitet (KI-Log Nr. 7): Tickets werden VOR der Zahlung beim catalog reserviert (F-05), Betrag kommt vom catalog statt aus dem Browser, Freigabe bei Fehlern.
+// Erweitert mit KI (KI-Log Nr. 13): Höchstmenge pro Event und Kunde vor der Reservierung.
 const orders = require('../repositories/orderRepository');
 const cart = require('../repositories/cartRepository');
 const catalog = require('../services/catalogClient');
 const paypal = require('../services/paypalClient');
 const { releaseQuietly } = require('../services/checkoutService');
+const { assertWithinLimit } = require('../services/ticketLimit');
 const { HttpError } = require('../middleware/errorHandler');
 
 /**
  * POST /api/orders (auch alter Pfad /api/orders/create-paypal-order) – Use-Case 1, Schritt 4–5:
+ *   0. Höchstmenge pro Event und Kunde prüfen (409, inkl. bereits gekaufter Tickets)
  *   1. Tickets beim catalog reservieren   (kein Bestand → 409, VOR der Zahlung)
  *   2. PayPal-Order über den catalog-Betrag anlegen
  * Früher wurde erst nach der Zahlung geprüft, ob genug Tickets da sind (Fehler F-05).
@@ -18,6 +21,7 @@ class CreatePaypalOrderHandler {
     const { userId, email } = req.user;
     const items = (await cart.getItems(userId)).map((r) => ({ eventId: r.event_id, quantity: r.quantity }));
     if (items.length === 0) throw new HttpError(400, 'Der Warenkorb ist leer.');
+    await assertWithinLimit(userId, items);
 
     const order = await orders.createPending(userId, email);
 

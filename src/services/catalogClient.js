@@ -1,4 +1,4 @@
-// Mit KI erstellt (KI-Log Nr. 7), vom Team geprüft.
+// Mit KI erstellt (KI-Log Nr. 7), vom Team geprüft. getReservation ergänzt mit KI (KI-Log Nr. 13).
 const { HttpError } = require('../middleware/errorHandler');
 
 /**
@@ -56,7 +56,8 @@ async function getEvent(eventId) {
 }
 
 const reserve = (orderRef, items) => call('/internal/reservations', { method: 'POST', body: { orderRef, items }, internal: true });
+const getReservation = (reservationId) => call(`/internal/reservations/${reservationId}`, { internal: true });
 const confirm = (reservationId) => call(`/internal/reservations/${reservationId}/confirm`, { method: 'POST', internal: true });
 const release = (reservationId) => call(`/internal/reservations/${reservationId}/release`, { method: 'POST', internal: true });
 
-module.exports = { getEvent, reserve, confirm, release };
+module.exports = { getEvent, reserve, getReservation, confirm, release };

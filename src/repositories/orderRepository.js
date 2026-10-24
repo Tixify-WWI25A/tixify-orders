@@ -1,8 +1,14 @@
 // Basiert auf unserem SQL aus den Order-Handlern (Abfragen auf orders und tickets).
 // Mit KI überarbeitet (KI-Log Nr. 7): an einer Stelle gesammelt, Abschluss einer Bestellung in einer Transaktion.
+// Erweitert mit KI (KI-Log Nr. 13): gekaufte Tickets zählen, Höchstmenge pro Event und Kunde beim Abschluss prüfen.
 const crypto = require('crypto');
 const pool = require('../config/db');
 const { HttpError } = require('../middleware/errorHandler');
+
+/**
+ * Bestellungen und Tickets.
+ * Status: PENDING (Tickets reserviert, Zahlung offen) → COMPLETED | CANCELLED | FAILED
+ */
 
 function toOrder(row) {
   if (!row) return null;
@@ -39,6 +45,7 @@ async function attachReservation(orderId, reservationId) {
   await pool.query('UPDATE orders SET reservation_id = $2, updated_at = now() WHERE order_id = $1', [orderId, reservationId]);
 }
 
+/** Nur Bestellungen des angemeldeten Nutzers – fremde Bestellungen sind wie „nicht vorhanden“. */
 async function findForUser({ orderId, paypalOrderId }, userId) {
   const { rows } = orderId
     ? await pool.query('SELECT * FROM orders WHERE order_id = $1 AND user_id = $2', [orderId, userId])
@@ -46,6 +53,7 @@ async function findForUser({ orderId, paypalOrderId }, userId) {
   return toOrder(rows[0]);
 }
 
+/** Wechselt den Status nur, wenn die Bestellung noch PENDING ist (verhindert Überschreiben eines Abschlusses). */
 async function setStatusIfPending(orderId, status) {
   const { rowCount } = await pool.query(
     "UPDATE orders SET status = $2, updated_at = now() WHERE order_id = $1 AND status = 'PENDING'",
@@ -54,11 +62,36 @@ async function setStatusIfPending(orderId, status) {
   return rowCount > 0;
 }
 
+/**
+ * Wie viele Tickets hat der Kunde für diese Events schon gekauft? Zählt nur abgeschlossene Bestellungen.
+ * @returns Map eventId → Anzahl (Events ohne Kauf fehlen in der Map)
+ */
+async function countBoughtTickets(userId, eventIds, db = pool) {
+  const { rows } = await db.query(
+    `SELECT t.event_id, COUNT(*)::int AS bought
+       FROM tickets t JOIN orders o ON o.order_id = t.order_id
+      WHERE o.user_id = $1 AND o.status = 'COMPLETED' AND t.event_id = ANY($2)
+      GROUP BY t.event_id`,
+    [userId, eventIds]
+  );
+  return new Map(rows.map((r) => [r.event_id, r.bought]));
+}
+
 function newTicketCode() {
+  // 12 zufällige Hex-Zeichen: nicht erratbar (anders als die fortlaufende Bestellnummer im alten QR-Code)
   return `TIX-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
 }
 
-async function complete(orderId, userId, items) {
+/**
+ * Schließt eine bezahlte Bestellung ab – alles in EINER Transaktion:
+ * Tickets erzeugen, Status COMPLETED, gekaufte Positionen aus dem Warenkorb entfernen.
+ * Höchstmenge: Wird sie überschritten, wird nichts gespeichert (409). Die Sperre pro Kunde sorgt dafür,
+ * dass zwei gleichzeitige Abschlüsse desselben Kunden nacheinander zählen und nicht beide durchrutschen.
+ * @param items Positionen aus der bestätigten Reservierung: [{ eventId, quantity, title, unitPrice }]
+ * @param maxPerEvent Höchstmenge pro Event und Kunde (ohne Angabe keine Prüfung)
+ * @returns erzeugte Tickets [{ code, eventId, title, price }]
+ */
+async function complete(orderId, userId, items, { maxPerEvent } = {}) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -67,6 +100,17 @@ async function complete(orderId, userId, items) {
     );
     if (rows[0]?.status !== 'PENDING') {
       throw new HttpError(409, 'Bestellung ist nicht mehr offen.');
+    }
+
+    if (maxPerEvent) {
+      // Sperre bis zum Ende der Transaktion, nur für diesen Kunden
+      await client.query('SELECT pg_advisory_xact_lock($1)', [userId]);
+      const bought = await countBoughtTickets(userId, items.map((i) => i.eventId), client);
+      const tooMany = items.find((i) => (bought.get(i.eventId) || 0) + i.quantity > maxPerEvent);
+      if (tooMany) {
+        throw new HttpError(409, `Pro Kunde sind höchstens ${maxPerEvent} Tickets pro Event erlaubt.`,
+          { eventId: tooMany.eventId, maxPerCustomer: maxPerEvent });
+      }
     }
 
     const tickets = [];
@@ -98,6 +142,10 @@ async function complete(orderId, userId, items) {
   }
 }
 
+/**
+ * Alle abgeschlossenen bzw. beendeten Bestellungen eines Nutzers mit ihren Tickets –
+ * in EINER Abfrage (das alte Backend stellte pro Bestellung eine eigene Abfrage, „N+1“).
+ */
 async function listForUser(userId) {
   const { rows } = await pool.query(
     `SELECT o.order_id, o.status, o.total_amount, o.created_at,
@@ -121,6 +169,10 @@ async function listForUser(userId) {
   }));
 }
 
+/**
+ * Offene Bestellungen, deren Reservierung abgelaufen ist, auf CANCELLED setzen.
+ * (Den Bestand gibt der catalog bei Ablauf selbst zurück.)
+ */
 async function cancelStalePending(minutes) {
   const { rowCount } = await pool.query(
     `UPDATE orders SET status = 'CANCELLED', updated_at = now()
@@ -132,5 +184,5 @@ async function cancelStalePending(minutes) {
 
 module.exports = {
   createPending, attachPayment, attachReservation, findForUser, setStatusIfPending,
-  complete, listForUser, cancelStalePending
+  countBoughtTickets, complete, listForUser, cancelStalePending
 };

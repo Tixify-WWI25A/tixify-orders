@@ -1,4 +1,11 @@
+// Basiert auf unserem SQL aus den Cart-Handlern (Abfragen auf carts und cart_items).
+// Mit KI überarbeitet (KI-Log Nr. 7): an einer Stelle gesammelt, ein Warenkorb pro Nutzer.
 const pool = require('../config/db');
+
+/**
+ * Warenkorb. Gespeichert werden nur Event-ID und Menge – Titel, Preis und Bestand
+ * kommen beim Anzeigen frisch vom catalog, damit der Kunde immer aktuelle Daten sieht.
+ */
 
 async function getItems(userId) {
   const { rows } = await pool.query(
@@ -20,11 +27,13 @@ async function getQuantity(userId, eventId) {
   return rows[0]?.quantity ?? 0;
 }
 
+/** Setzt die Menge eines Events im Warenkorb; 0 entfernt die Position. */
 async function setQuantity(userId, eventId, quantity) {
   if (quantity === 0) {
     await removeItem(userId, eventId);
     return;
   }
+  // Warenkorb anlegen, falls es noch keinen gibt (ON CONFLICT: kein Fehler bei gleichzeitigen Klicks)
   const { rows } = await pool.query(
     `INSERT INTO carts (user_id) VALUES ($1)
      ON CONFLICT (user_id) DO UPDATE SET user_id = EXCLUDED.user_id

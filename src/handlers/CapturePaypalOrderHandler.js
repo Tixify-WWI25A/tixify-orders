@@ -1,13 +1,28 @@
 // Basiert auf unserem handlers/CapturePaypalOrderHandler.js (Zahlung einziehen, Tickets erzeugen, Bestätigung).
 // Mit KI überarbeitet (KI-Log Nr. 7): Betragsprüfung, Reservierung bestätigen, automatische Rückerstattung bei Problemen, Tickets in einer Transaktion, Mail über die Queue (F-05).
+// Erweitert mit KI (KI-Log Nr. 13): Höchstmenge pro Event und Kunde vor dem Abbuchen und beim Abschluss.
 const orders = require('../repositories/orderRepository');
 const catalog = require('../services/catalogClient');
 const paypal = require('../services/paypalClient');
-const { publishEvent } = require('../services/eventBus');
+const { publishEvent } = require('../services/notificationService');
+const { assertWithinLimit } = require('../services/ticketLimit');
+const { MAX_TICKETS_PER_EVENT } = require('../config/limits');
 const { toCents, releaseQuietly } = require('../services/checkoutService');
 const { parseOrderId } = require('../validation/orderValidation');
 const { HttpError } = require('../middleware/errorHandler');
 
+/**
+ * POST /api/orders/:id/capture  bzw. alter Pfad  POST /api/orders/capture-paypal-order { paypalOrderId }
+ * Use-Case 1, Schritt 6–8:
+ *   0. Höchstmenge prüfen, solange noch nichts abgebucht ist
+ *   1. Zahlung einziehen und Betrag prüfen
+ *   2. Reservierung beim catalog bestätigen
+ *   3. Tickets erzeugen, Warenkorb leeren   (eine Transaktion)
+ *   4. order.completed in die Queue        (Mail, asynchron)
+ *
+ * Grundsatz: Geld wird nur behalten, wenn die Tickets sicher sind. Geht nach dem Abbuchen
+ * etwas schief (Reservierung abgelaufen, Betrag falsch), wird automatisch zurückerstattet.
+ */
 class CapturePaypalOrderHandler {
   async execute(req, res) {
     const order = await this.findOrder(req);
@@ -16,6 +31,16 @@ class CapturePaypalOrderHandler {
     if (order.status === 'COMPLETED') return res.json({ message: 'Kauf erfolgreich abgeschlossen!', orderId: order.orderId });
     if (order.status !== 'PENDING') throw new HttpError(409, 'Diese Bestellung ist nicht mehr offen. Bitte erneut bestellen.');
     if (!order.paypalOrderId) throw new HttpError(409, 'Für diese Bestellung wurde keine Zahlung angelegt.');
+
+    // Zwei offene Bestellungen desselben Kunden für dasselbe Event: Die zweite scheitert hier, bevor Geld fließt
+    try {
+      const reserved = await catalog.getReservation(order.reservationId);
+      await assertWithinLimit(req.user.userId, reserved.items);
+    } catch (err) {
+      await releaseQuietly(order.reservationId);
+      await orders.setStatusIfPending(order.orderId, 'FAILED');
+      throw err;
+    }
 
     const capture = await paypal.captureOrder(order.paypalOrderId, { orderRef: order.orderRef });
 
@@ -40,7 +65,15 @@ class CapturePaypalOrderHandler {
         : 'Die Tickets konnten wegen eines technischen Fehlers nicht bestätigt werden.');
     }
 
-    const tickets = await orders.complete(order.orderId, req.user.userId, reservation.items);
+    let tickets;
+    try {
+      tickets = await orders.complete(order.orderId, req.user.userId, reservation.items, { maxPerEvent: MAX_TICKETS_PER_EVENT });
+    } catch (err) {
+      // Sehr selten: zwei Zahlungen desselben Kunden gleichzeitig. Geld zurück, nichts gespeichert.
+      await this.refundAndFail(order, capture, 409, err.status === 409
+        ? err.message
+        : 'Die Tickets konnten wegen eines technischen Fehlers nicht gespeichert werden.');
+    }
     await this.announce(order, reservation, tickets);
 
     return res.json({ message: 'Kauf erfolgreich abgeschlossen!', orderId: order.orderId, tickets: tickets.length });

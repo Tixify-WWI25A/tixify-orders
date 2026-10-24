@@ -1,6 +1,12 @@
 // Mit KI erstellt (KI-Log Nr. 7), vom Team geprüft.
 const { escapeHtml, formatEuro } = require('./escape');
 
+/**
+ * Baut die Bestellbestätigung.
+ * Jedes Ticket bekommt einen eigenen QR-Code mit seinem ticket_code (nicht mehr nur die
+ * fortlaufende Bestellnummer, die man erraten und fälschen konnte).
+ * Die QR-Bilder werden als Inline-Anhänge mitgeschickt und über cid referenziert.
+ */
 function buildOrderConfirmationMail({ orderId, email, totalAmount, items, tickets }, qrImages) {
   const itemRows = items.map((item) => `
     <tr style="border-bottom: 1px solid #eee;">

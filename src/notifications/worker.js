@@ -1,4 +1,4 @@
-// Mit KI erstellt und vom Team geprüft (KI-Log Nr. 7):
+// Mit KI erstellt (KI-Log Nr. 7), vom Team geprüft.
 const { Worker } = require('bullmq');
 const nodemailer = require('nodemailer');
 const { QUEUE_NAME, createRedisConnection } = require('../config/redis');
@@ -13,6 +13,10 @@ function createTransporter() {
   });
 }
 
+/**
+ * Startet den Worker. Abhängigkeiten (Redis, Mailversand) werden hereingereicht,
+ * damit Tests einen Fake-Transporter und eine lokale Redis-Instanz nutzen können.
+ */
 function startWorker({
   connection = createRedisConnection(),
   transporter = createTransporter(),
@@ -38,11 +42,13 @@ function startWorker({
 
 module.exports = { startWorker };
 
+// Direkt gestartet (Heroku: "worker: node src/notifications/worker.js")
 if (require.main === module) {
   const connection = createRedisConnection();
   const worker = startWorker({ connection });
   console.log(`[notifications] Worker hört auf Queue "${QUEUE_NAME}"`);
 
+  // Heroku schickt beim Neustart SIGTERM: laufende Mails noch fertig senden, dann beenden.
   const shutdown = async () => {
     console.log('[notifications] Fahre herunter …');
     await worker.close();

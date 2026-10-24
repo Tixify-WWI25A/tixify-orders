@@ -1,8 +1,10 @@
+// Mit KI erstellt nach unserem Handler-Muster (KI-Log Nr. 7): Bestellung abbrechen, Tickets freigeben.
 const orders = require('../repositories/orderRepository');
 const { releaseQuietly } = require('../services/checkoutService');
 const { parseOrderId } = require('../validation/orderValidation');
 const { HttpError } = require('../middleware/errorHandler');
 
+/** POST /api/orders/:id/cancel – Kunde bricht im PayPal-Fenster ab, Tickets gehen zurück */
 class CancelOrderHandler {
   async execute(req, res) {
     const order = await orders.findForUser({ orderId: parseOrderId(req.params.id) }, req.user.userId);

@@ -1,7 +1,19 @@
+// Basiert auf unserem config/paypal.js (Anbindung an die PayPal-Sandbox).
+// Mit KI überarbeitet (KI-Log Nr. 7): Token-Zwischenspeicher, Zeitlimit, Idempotenz-Schlüssel gegen doppelte Zahlungen, Rückerstattung.
 const { HttpError } = require('../middleware/errorHandler');
 
+/**
+ * Anbindung an die PayPal Orders API v2 (Sandbox oder Live).
+ *
+ * Gegenüber dem alten Backend:
+ * - Access-Token wird zwischengespeichert, bis kurz vor Ablauf (statt bei JEDEM Aufruf neu)
+ * - Jeder Aufruf hat ein Zeitlimit
+ * - PayPal-Request-Id macht create/capture/refund idempotent: Wiederholt orders einen Aufruf
+ *   (z. B. nach einem Timeout), führt PayPal ihn nicht ein zweites Mal aus – kein doppeltes Abbuchen
+ */
+
 const TIMEOUT_MS = 10000;
-let cachedToken = null;
+let cachedToken = null; // { value, expiresAt }
 
 function base() {
   return process.env.PAYPAL_MODE === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
@@ -40,6 +52,7 @@ async function getAccessToken() {
     console.error('[orders] PayPal-Anmeldung fehlgeschlagen:', data.error_description);
     throw new HttpError(502, 'Anmeldung bei PayPal fehlgeschlagen.');
   }
+  // 60 Sekunden Puffer, damit kein Token mitten in einem Aufruf abläuft
   cachedToken = { value: data.access_token, expiresAt: Date.now() + (data.expires_in - 60) * 1000 };
   return cachedToken.value;
 }
@@ -56,6 +69,7 @@ async function authed(path, { method, body, requestId }) {
   });
 }
 
+/** Legt eine PayPal-Order über den Betrag an. customId = unsere order_ref (taucht in PayPal-Berichten auf). */
 async function createOrder({ amount, orderRef }) {
   const { ok, data } = await authed('/v2/checkout/orders', {
     method: 'POST',
@@ -76,6 +90,10 @@ async function createOrder({ amount, orderRef }) {
   return { paypalOrderId: data.id };
 }
 
+/**
+ * Zieht die Zahlung ein. Liefert Status, Betrag und Capture-ID (für eine eventuelle Rückerstattung).
+ * Wird die Zahlung von PayPal abgelehnt (z. B. Karte abgelehnt), kommt status != 'COMPLETED' zurück.
+ */
 async function captureOrder(paypalOrderId, { orderRef }) {
   const { ok, status, data } = await authed(`/v2/checkout/orders/${encodeURIComponent(paypalOrderId)}/capture`, {
     method: 'POST',
@@ -83,7 +101,7 @@ async function captureOrder(paypalOrderId, { orderRef }) {
   });
 
   if (!ok) {
-    // 422 = Zahlung abgelehnt / Order nicht genehmigt
+    // 422 = Zahlung abgelehnt / Order nicht genehmigt → fachliche Ablehnung, kein Systemfehler
     if (status === 422) return { status: 'DECLINED', reason: data.details?.[0]?.issue || data.name };
     console.error('[orders] PayPal capture fehlgeschlagen:', JSON.stringify(data));
     throw new HttpError(502, 'PayPal hat einen Fehler gemeldet. Es wurde nichts abgebucht.');
@@ -98,6 +116,7 @@ async function captureOrder(paypalOrderId, { orderRef }) {
   };
 }
 
+/** Erstattet eine Zahlung vollständig zurück (z. B. wenn die Reservierung inzwischen abgelaufen ist). */
 async function refundCapture(captureId, { orderRef }) {
   const { ok, data } = await authed(`/v2/payments/captures/${encodeURIComponent(captureId)}/refund`, {
     method: 'POST',
@@ -105,6 +124,7 @@ async function refundCapture(captureId, { orderRef }) {
     body: {}
   });
   if (!ok) {
+    // Kann nicht automatisch behoben werden → laut loggen, damit jemand manuell erstattet
     console.error(`[orders] ACHTUNG: Rückerstattung für ${orderRef} (Capture ${captureId}) fehlgeschlagen:`, JSON.stringify(data));
     return false;
   }

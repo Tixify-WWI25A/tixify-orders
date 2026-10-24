@@ -6,6 +6,10 @@ const { errorHandler, notFound } = require('./middleware/errorHandler');
 const cartRoutes = require('./routes/cartRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 
+/**
+ * Alle Routen-Dateien und wo sie eingehängt werden – wie im ursprünglichen Backend (app.use('/api/…')).
+ * Wird auch von den Tests genutzt, die JEDE Route auf den Login prüfen.
+ */
 const mounted = [
   ['/api/cart',   cartRoutes],
   ['/api/orders', orderRoutes]
