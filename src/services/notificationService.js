@@ -1,5 +1,6 @@
 // Mit KI erstellt nach dem Vorbild der BullMQ-Dokumentation (KI-Log Nr. 10).
 // Quellen: docs.bullmq.io – Guide: Queues, Connections, Retrying failing jobs, Job Ids (abgerufen am 18.10.2026).
+// Mit KI erweitert (KI-Log Nr. 24): Zeitlimit beim Einreihen (R-21, K-02).
 const { Queue } = require('bullmq');
 const { createRedisConnection, QUEUE_NAME } = require('../config/redis');
 
@@ -7,6 +8,9 @@ const { createRedisConnection, QUEUE_NAME } = require('../config/redis');
  * Veröffentlicht fachliche Events (z. B. order.completed) in die Queue "notifications".
  * Abgeholt und verarbeitet werden sie vom notifications-Worker (src/notifications/worker.js).
  */
+
+// Ohne Limit würde queue.add bei einem Redis-Ausfall unbegrenzt warten (maxRetriesPerRequest: null).
+const ENQUEUE_TIMEOUT_MS = Number(process.env.ENQUEUE_TIMEOUT_MS) || 2000;
 
 let connection = null;
 let queue = null;
@@ -36,9 +40,23 @@ function getQueue() {
 /**
  * Docs „Queues“: queue.add(name, data, opts)
  * Docs „Job Ids“: dieselbe jobId zweimal ergibt nur EINEN Auftrag
+ * Zeitlimit: Antwortet Redis nicht rechtzeitig, wird ein Fehler geworfen. Der Aufrufer fängt ihn ab;
+ * die bezahlte Bestellung bleibt gültig. Kommt Redis später zurück, wird der Auftrag ggf. noch
+ * eingereiht – die feste jobId verhindert dabei eine doppelte Mail.
  */
 async function publishEvent(name, data, jobId) {
-  return getQueue().add(name, data, { jobId });
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`Redis nicht erreichbar (Zeitlimit ${ENQUEUE_TIMEOUT_MS} ms beim Einreihen)`)),
+      ENQUEUE_TIMEOUT_MS
+    );
+  });
+  try {
+    return await Promise.race([getQueue().add(name, data, { jobId }), timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // Docs „Connections“ (Herunterfahren): erst die Queue schließen, dann die übergebene Verbindung selbst
@@ -50,4 +68,4 @@ async function closeEventBus() {
   connection = null;
 }
 
-module.exports = { publishEvent, closeEventBus };
+module.exports = { publishEvent, closeEventBus, ENQUEUE_TIMEOUT_MS };
