@@ -19,8 +19,8 @@ info:
     Mit „veraltet“ markierte Pfade halten das bisherige Frontend lauffähig.
 
 servers:
-  - url: https://tixify-orders.herokuapp.com
-    description: Produktion (Heroku-App tixify-orders; genaue URL siehe Heroku-Dashboard)
+  - url: https://tixify-orders-e5c8e6827b44.herokuapp.com
+    description: Produktion (Heroku-App tixify-orders; vom Frontend nur über das gateway aufgerufen)
   - url: http://localhost:3002
     description: lokal
 
