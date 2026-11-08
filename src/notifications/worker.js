@@ -1,4 +1,4 @@
-// Mit KI erstellt (KI-Log Nr. 7), vom Team geprüft.
+// Mit KI erstellt (KI-Log Nr. 32), vom Team geprüft.
 const { Worker } = require('bullmq');
 const nodemailer = require('nodemailer');
 const { QUEUE_NAME, createRedisConnection } = require('../config/redis');

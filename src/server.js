@@ -1,5 +1,5 @@
 // Basiert auf unserem config/server.js (Express-Server starten).
-// Mit KI überarbeitet (KI-Log Nr. 7): Prüfung der Umgebungsvariablen beim Start, sauberes Herunterfahren bei Neustart durch Heroku.
+// Mit KI überarbeitet (KI-Log Nr. 32): Prüfung der Umgebungsvariablen beim Start, sauberes Herunterfahren bei Neustart durch Heroku.
 const REQUIRED_ENV = [
   'DATABASE_URL', 'JWT_SECRET', 'INTERNAL_API_TOKEN', 'CATALOG_URL', 'REDIS_URL',
   'PAYPAL_CLIENT_ID', 'PAYPAL_CLIENT_SECRET'

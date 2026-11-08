@@ -1,5 +1,5 @@
 // Basiert auf unserem handlers/GetCartHandler.js (Warenkorb mit Event-Daten).
-// Mit KI überarbeitet (KI-Log Nr. 7): Event-Daten kommen vom catalog statt per JOIN, gelöschte Events werden entfernt, Summe in Cent gerechnet.
+// Mit KI überarbeitet (KI-Log Nr. 32): Event-Daten kommen vom catalog statt per JOIN, gelöschte Events werden entfernt, Summe in Cent gerechnet.
 const cart = require('../repositories/cartRepository');
 const catalog = require('../services/catalogClient');
 

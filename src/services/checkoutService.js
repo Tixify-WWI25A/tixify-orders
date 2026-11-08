@@ -1,4 +1,4 @@
-// Mit KI erstellt (KI-Log Nr. 7), vom Team geprüft.
+// Mit KI erstellt (KI-Log Nr. 32), vom Team geprüft.
 const catalog = require('./catalogClient');
 
 /** Kleine Hilfen für den Checkout, gebraucht von mehreren Handlern. */

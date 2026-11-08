@@ -1,4 +1,4 @@
-// Mit KI erstellt nach unserem Handler-Muster (KI-Log Nr. 7): Menge per PUT setzen.
+// Mit KI erstellt nach unserem Handler-Muster (KI-Log Nr. 32): Menge per PUT setzen.
 const { setCartQuantity } = require('../services/cartService');
 const { parseEventId, parseQuantity } = require('../validation/orderValidation');
 

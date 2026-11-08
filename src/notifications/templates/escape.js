@@ -1,4 +1,4 @@
-// Mit KI erstellt (KI-Log Nr. 7), vom Team geprüft.
+// Mit KI erstellt (KI-Log Nr. 32), vom Team geprüft.
 /**
  * Maskiert HTML-Sonderzeichen. Event-Titel und Benutzernamen kommen aus der Datenbank
  * und werden von Nutzern bzw. Admins eingegeben – ungefiltert in Mail-HTML eingesetzt

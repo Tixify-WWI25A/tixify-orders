@@ -1,5 +1,5 @@
 // Basiert auf unserem config/mailer.js (Mailversand mit nodemailer über Brevo).
-// Mit KI überarbeitet (KI-Log Nr. 7): Versand im eigenen Worker über die Queue, ein QR-Code pro Ticket (F-09).
+// Mit KI überarbeitet (KI-Log Nr. 32): Versand im eigenen Worker über die Queue, ein QR-Code pro Ticket (F-09).
 const { UnrecoverableError } = require('bullmq');
 const QRCode = require('qrcode');
 const { buildWelcomeMail } = require('./templates/welcome');

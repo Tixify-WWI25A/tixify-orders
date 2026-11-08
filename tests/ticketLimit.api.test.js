@@ -1,4 +1,4 @@
-// Mit KI erstellt nach unserer Vorgabe (KI-Log Nr. 13), vom Team geprüft: Höchstmenge 5 Tickets pro Event und Kunde.
+// Mit KI erstellt nach unserer Vorgabe (KI-Log Nr. 40), vom Team geprüft: Höchstmenge 5 Tickets pro Event und Kunde.
 const request = require('supertest');
 const { describeWithDb, resetSchema, bearer } = require('./helpers/testDb');
 

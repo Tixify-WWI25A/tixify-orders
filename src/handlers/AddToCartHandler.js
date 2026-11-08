@@ -1,5 +1,5 @@
 // Basiert auf unserem handlers/AddToCartHandler.js (Menge setzen oder um delta ändern).
-// Mit KI überarbeitet (KI-Log Nr. 7): Bestandsprüfung über den catalog, Mengengrenzen.
+// Mit KI überarbeitet (KI-Log Nr. 32): Bestandsprüfung über den catalog, Mengengrenzen.
 const cart = require('../repositories/cartRepository');
 const { setCartQuantity } = require('../services/cartService');
 const { parseEventId, parseQuantity } = require('../validation/orderValidation');

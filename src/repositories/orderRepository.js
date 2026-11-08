@@ -1,6 +1,6 @@
 // Basiert auf unserem SQL aus den Order-Handlern (Abfragen auf orders und tickets).
-// Mit KI überarbeitet (KI-Log Nr. 7): an einer Stelle gesammelt, Abschluss einer Bestellung in einer Transaktion.
-// Erweitert mit KI (KI-Log Nr. 13): gekaufte Tickets zählen, Höchstmenge pro Event und Kunde beim Abschluss prüfen.
+// Mit KI überarbeitet (KI-Log Nr. 32): an einer Stelle gesammelt, Abschluss einer Bestellung in einer Transaktion.
+// Erweitert mit KI (KI-Log Nr. 40): gekaufte Tickets zählen, Höchstmenge pro Event und Kunde beim Abschluss prüfen.
 const crypto = require('crypto');
 const pool = require('../config/db');
 const { HttpError } = require('../middleware/errorHandler');

@@ -1,4 +1,4 @@
-// Mit KI erstellt (KI-Log Nr. 7), vom Team geprüft.
+// Mit KI erstellt (KI-Log Nr. 32), vom Team geprüft.
 /**
  * Integrationstest mit einer ECHTEN Redis-Instanz.
  * Lokal: `redis-server` starten und `REDIS_URL=redis://localhost:6379 npm test`.

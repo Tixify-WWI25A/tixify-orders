@@ -1,6 +1,6 @@
 // Basiert auf unserem handlers/CreatePaypalOrderHandler.js (PayPal-Order aus dem Warenkorb anlegen).
-// Mit KI überarbeitet (KI-Log Nr. 7): Tickets werden VOR der Zahlung beim catalog reserviert (F-05), Betrag kommt vom catalog statt aus dem Browser, Freigabe bei Fehlern.
-// Erweitert mit KI (KI-Log Nr. 13): Höchstmenge pro Event und Kunde vor der Reservierung.
+// Mit KI überarbeitet (KI-Log Nr. 32): Tickets werden VOR der Zahlung beim catalog reserviert (F-05), Betrag kommt vom catalog statt aus dem Browser, Freigabe bei Fehlern.
+// Erweitert mit KI (KI-Log Nr. 40): Höchstmenge pro Event und Kunde vor der Reservierung.
 const orders = require('../repositories/orderRepository');
 const cart = require('../repositories/cartRepository');
 const catalog = require('../services/catalogClient');

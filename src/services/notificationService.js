@@ -1,6 +1,6 @@
-// Mit KI erstellt nach dem Vorbild der BullMQ-Dokumentation (KI-Log Nr. 10).
+// Mit KI erstellt nach dem Vorbild der BullMQ-Dokumentation (KI-Log Nr. 35).
 // Quellen: docs.bullmq.io – Guide: Queues, Connections, Retrying failing jobs, Job Ids (abgerufen am 18.10.2026).
-// Mit KI erweitert (KI-Log Nr. 24): Zeitlimit beim Einreihen (R-21, K-02).
+// Mit KI erweitert (KI-Log Nr. 60): Zeitlimit beim Einreihen (R-21, K-02).
 const { Queue } = require('bullmq');
 const { createRedisConnection, QUEUE_NAME } = require('../config/redis');
 

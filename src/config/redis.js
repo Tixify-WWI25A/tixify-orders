@@ -1,4 +1,4 @@
-// Mit KI erstellt (KI-Log Nr. 7), vom Team geprüft.
+// Mit KI erstellt (KI-Log Nr. 32), vom Team geprüft.
 const { Redis } = require('ioredis');
 
 /** Name der Queue. Muss bei Produzenten (identity, orders) und Konsument (notifications) identisch sein. */

@@ -1,4 +1,4 @@
-// Mit KI erstellt (KI-Log Nr. 7), vom Team geprüft. Höchstmenge pro Kunde ergänzt mit KI (KI-Log Nr. 13).
+// Mit KI erstellt (KI-Log Nr. 32), vom Team geprüft. Höchstmenge pro Kunde ergänzt mit KI (KI-Log Nr. 40).
 const cart = require('../repositories/cartRepository');
 const catalog = require('./catalogClient');
 const { assertWithinLimit } = require('./ticketLimit');

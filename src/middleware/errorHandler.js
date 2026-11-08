@@ -1,4 +1,4 @@
-// Mit KI erstellt (KI-Log Nr. 7), vom Team geprüft.
+// Mit KI erstellt (KI-Log Nr. 32), vom Team geprüft.
 /**
  * Einheitliche Fehlerbehandlung. Früher baute jeder Handler seine Fehlerantwort selbst
  * (mal { message }, mal { error }, mal 403 statt 401). Jetzt werfen Handler einen HttpError,

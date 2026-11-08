@@ -1,5 +1,5 @@
 // Basiert auf unserem config/auth.js (checkLogin) und config/requireAdmin.js (Bearer-Token, jwt.verify mit HS256, req.user, Admin-Prüfung über role, Fehlertexte).
-// Mit KI überarbeitet (KI-Log Nr. 7): beide Dateien zusammengeführt; abgelaufenes Token liefert 401 statt 403 (F-12); Fehler über den zentralen errorHandler; neu: requireInternal für Service-zu-Service-Aufrufe.
+// Mit KI überarbeitet (KI-Log Nr. 32): beide Dateien zusammengeführt; abgelaufenes Token liefert 401 statt 403 (F-12); Fehler über den zentralen errorHandler; neu: requireInternal für Service-zu-Service-Aufrufe.
 /**
  * Middlewares für Login und Rechte. Diese Datei ist in allen drei Backend-Repos identisch
  * (tixify-gateway, tixify-catalog, tixify-orders). Bewusste Entscheidung (siehe ADR):

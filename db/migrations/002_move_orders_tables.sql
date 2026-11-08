@@ -1,4 +1,4 @@
--- Mit KI erstellt (KI-Log Nr. 7), vom Team geprüft.
+-- Mit KI erstellt (KI-Log Nr. 32), vom Team geprüft.
 -- Migration 002: Warenkorb-, Bestell- und Ticket-Tabellen aus "public" in das Schema "orders" verschieben
 --
 -- VORAUSSETZUNG: Migration 001 aus tixify-catalog ist bereits gelaufen (Events liegen in catalog.events).

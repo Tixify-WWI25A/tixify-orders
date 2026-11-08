@@ -1,4 +1,4 @@
-// Mit KI erstellt nach unserem Handler-Muster (KI-Log Nr. 7): Bestellung abbrechen, Tickets freigeben.
+// Mit KI erstellt nach unserem Handler-Muster (KI-Log Nr. 32): Bestellung abbrechen, Tickets freigeben.
 const orders = require('../repositories/orderRepository');
 const { releaseQuietly } = require('../services/checkoutService');
 const { parseOrderId } = require('../validation/orderValidation');

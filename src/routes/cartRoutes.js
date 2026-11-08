@@ -1,5 +1,5 @@
 // Basiert auf unserem routes/cartRoutes.js (Routen-Tabelle für den Warenkorb).
-// Mit KI überarbeitet (KI-Log Nr. 7): eigene Routen-Schleife des Teams, neue PUT-Route, alter Pfad bleibt.
+// Mit KI überarbeitet (KI-Log Nr. 32): eigene Routen-Schleife des Teams, neue PUT-Route, alter Pfad bleibt.
 const express = require('express');
 const { loggedIn } = require('../middleware/auth');
 

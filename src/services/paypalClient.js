@@ -1,5 +1,5 @@
 // Basiert auf unserem config/paypal.js (Anbindung an die PayPal-Sandbox).
-// Mit KI überarbeitet (KI-Log Nr. 7): Token-Zwischenspeicher, Zeitlimit, Idempotenz-Schlüssel gegen doppelte Zahlungen, Rückerstattung.
+// Mit KI überarbeitet (KI-Log Nr. 32): Token-Zwischenspeicher, Zeitlimit, Idempotenz-Schlüssel gegen doppelte Zahlungen, Rückerstattung.
 const { HttpError } = require('../middleware/errorHandler');
 
 /**

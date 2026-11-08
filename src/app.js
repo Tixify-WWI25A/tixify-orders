@@ -1,5 +1,5 @@
 // Basiert auf unserem app.js / config/server.js (Express-App, Routen mit app.use('/api/…') einhängen).
-// Mit KI überarbeitet (KI-Log Nr. 7): nur noch Warenkorb und Bestellungen.
+// Mit KI überarbeitet (KI-Log Nr. 32): nur noch Warenkorb und Bestellungen.
 const express = require('express');
 const helmet = require('helmet');
 const { errorHandler, notFound } = require('./middleware/errorHandler');

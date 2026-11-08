@@ -1,4 +1,4 @@
--- Mit KI erstellt (KI-Log Nr. 7), vom Team geprüft.
+-- Mit KI erstellt (KI-Log Nr. 32), vom Team geprüft.
 -- Tixify orders-Service: vollständiges Schema
 -- Baut den Datenbereich des orders-Service von Grund auf (lokal / CI).
 -- Für die bestehende Heroku-Datenbank stattdessen db/migrations/002_move_orders_tables.sql ausführen.

@@ -1,4 +1,4 @@
-// Mit KI erstellt (KI-Log Nr. 7), vom Team geprüft. Höchstmenge ergänzt mit KI (KI-Log Nr. 13).
+// Mit KI erstellt (KI-Log Nr. 32), vom Team geprüft. Höchstmenge ergänzt mit KI (KI-Log Nr. 40).
 const { HttpError } = require('../middleware/errorHandler');
 const { MAX_TICKETS_PER_EVENT } = require('../config/limits');
 

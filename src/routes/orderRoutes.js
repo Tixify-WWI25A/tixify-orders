@@ -1,5 +1,5 @@
 // Basiert auf unserem routes/orderRoutes.js (Routen-Tabelle für Bestellungen).
-// Mit KI überarbeitet (KI-Log Nr. 7): eigene Routen-Schleife des Teams, neue Pfade, alte Pfade bleiben für das Frontend.
+// Mit KI überarbeitet (KI-Log Nr. 32): eigene Routen-Schleife des Teams, neue Pfade, alte Pfade bleiben für das Frontend.
 const express = require('express');
 const { loggedIn } = require('../middleware/auth');
 

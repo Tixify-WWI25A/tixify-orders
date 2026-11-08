@@ -1,5 +1,5 @@
 // Basiert auf unserem SQL aus den Cart-Handlern (Abfragen auf carts und cart_items).
-// Mit KI überarbeitet (KI-Log Nr. 7): an einer Stelle gesammelt, ein Warenkorb pro Nutzer.
+// Mit KI überarbeitet (KI-Log Nr. 32): an einer Stelle gesammelt, ein Warenkorb pro Nutzer.
 const pool = require('../config/db');
 
 /**

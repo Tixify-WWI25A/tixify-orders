@@ -1,4 +1,4 @@
-// Mit KI erstellt nach unserer Vorgabe (KI-Log Nr. 13): Höchstmenge pro Event und Kunde.
+// Mit KI erstellt nach unserer Vorgabe (KI-Log Nr. 40): Höchstmenge pro Event und Kunde.
 const orders = require('../repositories/orderRepository');
 const { MAX_TICKETS_PER_EVENT } = require('../config/limits');
 const { HttpError } = require('../middleware/errorHandler');

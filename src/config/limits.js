@@ -1,4 +1,4 @@
-// Mit KI erstellt nach unserer Vorgabe (KI-Log Nr. 13): Höchstmenge an einer Stelle statt überall eine feste 5.
+// Mit KI erstellt nach unserer Vorgabe (KI-Log Nr. 40): Höchstmenge an einer Stelle statt überall eine feste 5.
 
 /**
  * Höchstens so viele Tickets darf ein Kunde für ein Event besitzen – über alle Bestellungen zusammen.

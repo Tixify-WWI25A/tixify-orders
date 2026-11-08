@@ -1,6 +1,6 @@
 // Basiert auf unserem handlers/CapturePaypalOrderHandler.js (Zahlung einziehen, Tickets erzeugen, Bestätigung).
-// Mit KI überarbeitet (KI-Log Nr. 7): Betragsprüfung, Reservierung bestätigen, automatische Rückerstattung bei Problemen, Tickets in einer Transaktion, Mail über die Queue (F-05).
-// Erweitert mit KI (KI-Log Nr. 13): Höchstmenge pro Event und Kunde vor dem Abbuchen und beim Abschluss.
+// Mit KI überarbeitet (KI-Log Nr. 32): Betragsprüfung, Reservierung bestätigen, automatische Rückerstattung bei Problemen, Tickets in einer Transaktion, Mail über die Queue (F-05).
+// Erweitert mit KI (KI-Log Nr. 40): Höchstmenge pro Event und Kunde vor dem Abbuchen und beim Abschluss.
 const orders = require('../repositories/orderRepository');
 const catalog = require('../services/catalogClient');
 const paypal = require('../services/paypalClient');

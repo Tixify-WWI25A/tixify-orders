@@ -1,5 +1,5 @@
 // Basiert auf unserem config/db.js (pg-Pool mit DATABASE_URL, SSL für Heroku).
-// Mit KI überarbeitet (KI-Log Nr. 7): eigenes Schema pro Service über search_path, SSL nur außerhalb von localhost (lokale Tests, CI), Testverbindung beim Start entfernt.
+// Mit KI überarbeitet (KI-Log Nr. 32): eigenes Schema pro Service über search_path, SSL nur außerhalb von localhost (lokale Tests, CI), Testverbindung beim Start entfernt.
 const { Pool } = require('pg');
 
 /**

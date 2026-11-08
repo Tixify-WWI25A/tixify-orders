@@ -1,4 +1,4 @@
-// Mit KI erstellt (KI-Log Nr. 7), vom Team geprüft. getReservation ergänzt mit KI (KI-Log Nr. 13).
+// Mit KI erstellt (KI-Log Nr. 32), vom Team geprüft. getReservation ergänzt mit KI (KI-Log Nr. 40).
 const { HttpError } = require('../middleware/errorHandler');
 
 /**
