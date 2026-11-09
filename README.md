@@ -2,9 +2,11 @@
 
 **Warenkorb, Bezahlung über PayPal, Bestellungen und Tickets.** Enthält außerdem den **notifications-Worker**, der Bestätigungsmails mit QR-Codes asynchron über eine Redis-Queue verschickt.
 
+Live: https://tixify-orders-e5c8e6827b44.herokuapp.com/health
+
 | Repo | Aufgabe | Heroku-App |
 |---|---|---|
-| tixify-gateway | Eingangstür, Login, Benutzer | `tixify` |
+| Tixify_backend (gateway) | Eingangstür, Login, Benutzer | `tixify` |
 | tixify-catalog | Events, GraphQL, Reservierungen | `tixify-catalog` |
 | **tixify-orders** | **Warenkorb, PayPal, Bestellungen, Mails** | `tixify-orders` (`web` + `worker`) |
 
@@ -37,7 +39,7 @@ Vollständig in [`docs/openapi.yaml`](docs/openapi.yaml), Queue-Vertrag in [`doc
 | POST | `/api/orders/:id/cancel` | Abbrechen |
 | GET | `/api/orders` | Meine Buchungen mit Tickets |
 
-Veraltete Pfade des bisherigen Frontends (`POST /api/cart/items`, `/api/orders/my-bookings`, `/create-paypal-order`, `/capture-paypal-order`) funktionieren weiter, bis das Frontend umgestellt ist.
+Veraltete Pfade des bisherigen Frontends (`POST /api/cart/items`, `/api/orders/my-bookings`, `/create-paypal-order`, `/capture-paypal-order`) funktionieren weiter; die MPA nutzt `POST /api/cart/items` und `/api/orders/my-bookings` noch.
 
 ## Aufbau
 
